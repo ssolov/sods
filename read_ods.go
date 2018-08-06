@@ -1,4 +1,4 @@
-package ods
+package sods
 
 import (
 	"archive/zip"
