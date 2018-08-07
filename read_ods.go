@@ -158,7 +158,6 @@ func parseRows(rawTable []byte) []Row {
 			row.Cells = parseCells(rawRow)
 			if len(row.Cells) > 0 {
 				rows = append(rows, row)
-				fmt.Printf("add cells to row -> %d\n", len(row.Cells))
 			}
 		}
 	}
@@ -265,7 +264,6 @@ func Open(odsFileName string) (*File, error) {
 
 		sh := Sheet{}
 		sh.Name = parseAttrValue(tbl, bytes.Index(tbl, []byte(tableName))+tableNameLen)
-		fmt.Printf("Parse table -> %s\n", sh.Name)
 
 		var err error
 		if tbl, err = cutElementContent(tbl, []byte(rowStart), []byte(rowEnd)); err != nil {
@@ -273,7 +271,6 @@ func Open(odsFileName string) (*File, error) {
 		}
 
 		sh.Rows = parseRows(tbl)
-		fmt.Printf("add rows to table -> %d\n", len(sh.Rows))
 		odsFile.Sheets = append(odsFile.Sheets, sh)
 	}
 
