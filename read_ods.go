@@ -122,6 +122,7 @@ func parseElementContent(elm []byte, start int) string {
 	return c
 }
 
+// Returns the content between first begin and last end pattern inclusiv these patterns
 func cutElementContent(elm, begin, end []byte) ([]byte, error) {
 	i := bytes.Index(elm, begin)
 	if i < 0 {
@@ -140,6 +141,7 @@ func cutElementContent(elm, begin, end []byte) ([]byte, error) {
 
 func parseRows(rawTable []byte) []Row {
 	var rows []Row
+	// split rows by the begin pattern
 	rawRows := bytes.Split(rawTable, []byte(rowStart))
 	if len(rawRows) > 0 {
 		rows = make([]Row, 0, len(rows))
@@ -151,6 +153,7 @@ func parseRows(rawTable []byte) []Row {
 
 			row := Row{}
 			var err error
+			// get cells and ignore all empty cells after last non empty cell
 			if rawRow, err = cutElementContent(rawRow, []byte(cellStart), []byte(cellEnd)); err != nil {
 				continue
 			}
@@ -177,6 +180,7 @@ func parseCells(rawRow []byte) []Cell {
 		cell := parseCell(rawCell)
 		cells = append(cells, cell)
 
+		// search and copy repeted cells
 		rpCells, err := repeatCell(rawCell, cell)
 		if err == nil && len(rpCells) > 0 {
 			cells = append(cells, rpCells...)
@@ -186,7 +190,6 @@ func parseCells(rawRow []byte) []Cell {
 	return cells
 }
 
-// parseCell ...
 func parseCell(cell []byte) Cell {
 	var c = Cell{}
 
@@ -233,8 +236,8 @@ func repeatCell(cont []byte, c Cell) ([]Cell, error) {
 	return cells, nil
 }
 
-// Open function opens and reads the content of given ods file
-func Open(odsFileName string) (*File, error) {
+// Read function opens and reads the content of ods file
+func Read(odsFileName string) (*File, error) {
 	var odsFile *File
 
 	r, err := zip.OpenReader(odsFileName)
@@ -248,7 +251,16 @@ func Open(odsFileName string) (*File, error) {
 		return odsFile, err
 	}
 
+	return ParseContent(content)
+}
+
+// ParseContent function will parse the content of content.xml
+func ParseContent(content []byte) (*File, error) {
+	var odsFile *File
+
+	// found first begin and last end of table
 	content, _ = cutElementContent(content, []byte(tableStart), []byte(tableEnd))
+	// split tables by begin pattern
 	tables := bytes.Split(content, []byte(tableStart))
 	if len(tables) < 1 {
 		return odsFile, nil
@@ -263,9 +275,11 @@ func Open(odsFileName string) (*File, error) {
 		}
 
 		sh := Sheet{}
+		// read the name of table
 		sh.Name = parseAttrValue(tbl, bytes.Index(tbl, []byte(tableName))+tableNameLen)
 
 		var err error
+		// only get rows from this table
 		if tbl, err = cutElementContent(tbl, []byte(rowStart), []byte(rowEnd)); err != nil {
 			continue
 		}
@@ -275,4 +289,5 @@ func Open(odsFileName string) (*File, error) {
 	}
 
 	return odsFile, nil
+
 }

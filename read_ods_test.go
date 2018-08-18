@@ -107,3 +107,18 @@ func TestParseCells1(t *testing.T) {
 		t.Fail()
 	}
 }
+
+func TestCutElementContent(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	beforCut := []byte(`.......<table:table-cell office:value-type="string"><text:p>BlaBlaBla</text:p></table:table-cell>........`)
+	afterCut := `<table:table-cell office:value-type="string"><text:p>BlaBlaBla</text:p></table:table-cell>`
+	cnt, _ := cutElementContent(beforCut, []byte(cellStart), []byte(cellEnd))
+	t.Log(string(cnt))
+
+	if string(cnt) != afterCut {
+		t.Fail()
+	}
+}
