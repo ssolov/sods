@@ -1,11 +1,13 @@
 # sods
-** About
+## About
 A simple parser for ODS tables
-** Install
+## Installation
+```shell
 go get -u github.com/ssolov/sods
-** Example
+```
+## Example
 Read and print to stdout all cell from ODS table
-#+BEGIN_SRC go
+```go
 package main
 
 import (
@@ -28,4 +30,4 @@ func main() {
 		}
 	}
 }
-#+END_SRC
+```
