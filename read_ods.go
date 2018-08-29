@@ -41,6 +41,12 @@ const (
 	textStart    = "<text:"
 	textStartLen = len(textStart)
 
+	textSpace    = "<text:s/>"
+	textSpaceLen = len(textSpace)
+
+	textSpaceCount    = "text:c=\""
+	textSpaceCountLen = len(textSpaceCount)
+
 	cellRepeat    = "table:number-columns-repeated=\""
 	cellRepeatLen = len(cellRepeat)
 
@@ -210,12 +216,32 @@ func parseCell(cell []byte) Cell {
 
 	bg = bytes.Index(cell, []byte(textStart))
 	if bg != -1 {
-		c.Text = parseElementContent(cell, bg+textStartLen)
-		c.Text = strings.Replace(c.Text, "<text:s/>", " ", -1)
-		c.Text = html.EscapeString(c.Text)
+		c.Text = html.EscapeString(addNSpaces(parseElementContent(cell, bg+textStartLen)))
 	}
 
 	return c
+}
+
+func addNSpaces(txt string) string {
+	txt = strings.Replace(txt, textSpace, " ", -1)
+
+	esbIdx := strings.Index(txt, textSpaceCount)
+	if esbIdx > -1 {
+		txt = txt[esbIdx+textSpaceCountLen:]
+		eseIdx := strings.Index(txt, "/>")
+		if eseIdx > -1 {
+			spc := parseAttrValue([]byte(txt[:eseIdx]), 0)
+			txt = txt[eseIdx+2:]
+			if spc != "" {
+				n, err := strconv.Atoi(spc)
+				if err == nil {
+					return strings.Repeat(" ", n) + txt
+				}
+			}
+		}
+	}
+
+	return txt
 }
 
 func repeatCell(cont []byte, c Cell) ([]Cell, error) {

@@ -29,6 +29,19 @@ func TestParseCell2(t *testing.T) {
 	}
 }
 
+func TestParseCellWithSpaces(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	cell := parseCell([]byte(`
+								<table:table-cell office:value-type="string">
+									<text:p><text:s text:c="3"/>BlaBlaBla</text:p>
+								</table:table-cell>`))
+	if cell.Text != "   BlaBlaBla" {
+		t.Fail()
+	}
+}
 func TestParseCells1(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
