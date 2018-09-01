@@ -255,6 +255,7 @@ func repeatCell(cont []byte, c Cell) ([]Cell, error) {
 
 		cells = make([]Cell, 0, rpCount-1)
 		for i := 1; i < rpCount; i++ {
+			// copy the cell append n time
 			cells = append(cells, c)
 		}
 	}
