@@ -6,7 +6,7 @@ A simple parser for ODS tables
 go get -u github.com/ssolov/sods
 ```
 ## Example
-Read and print to stdout all cell from ODS table
+Read and print all cell from ODS table to stdout
 ```go
 package main
 
@@ -22,9 +22,9 @@ func main() {
 
 	for _, sh := range ods.Sheets {
 		fmt.Println("Table name: " + sh.Name)
-		for _, row :=  range sh.Rows {
-			for _, cell :=  range row.Cells {
-				fmt.Print(cell.Text)
+		for _, row := range sh.Rows {
+			for _, cell := range row {
+				fmt.Print(cell)
 			}
 			fmt.Println()
 		}

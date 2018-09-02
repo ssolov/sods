@@ -18,7 +18,7 @@ func TestParseCell1(t *testing.T) {
 								<table:table-cell office:value-type="string">
 									<text:p>BlaBlaBla</text:p>
 								</table:table-cell>`))
-	if cell.Text != "BlaBlaBla" {
+	if cell != "BlaBlaBla" {
 		t.Fail()
 	}
 }
@@ -29,7 +29,7 @@ func TestParseCell2(t *testing.T) {
 	}
 
 	cell := parseCell([]byte(`<table:table-cell table:style-name="ce15"/>`))
-	if len(cell.Text) != 0 {
+	if len(cell) != 0 {
 		t.Fail()
 	}
 }
@@ -43,7 +43,7 @@ func TestParseCellWithSpaces(t *testing.T) {
 								<table:table-cell office:value-type="string">
 									<text:p><text:s text:c="3"/>BlaBlaBla</text:p>
 								</table:table-cell>`))
-	if cell.Text != "   BlaBlaBla" {
+	if cell != "   BlaBlaBla" {
 		t.Fail()
 	}
 }
@@ -52,8 +52,7 @@ func TestParseCells1(t *testing.T) {
 		t.Skip("skipping test in short mode.")
 	}
 
-	cells := parseCells([]byte(`
-			<table:table-cell office:value-type="string">
+	cells := parseCells([]byte(`<table:table-cell office:value-type="string">
 				<text:p>BlaBlaBla</text:p>
 			</table:table-cell>
 			<table:table-cell office:value-type="string">
@@ -122,6 +121,10 @@ func TestParseCells1(t *testing.T) {
 			</table:table-cell>`))
 
 	if len(cells) != 26 {
+		t.Logf("Excepted 26 cells but got %d\n", len(cells))
+		// for i, c := range cells {
+		// 	t.Logf("%d. %s\n", i, c)
+		// }
 		t.Fail()
 	}
 }
@@ -146,7 +149,7 @@ func TestRead(t *testing.T) {
 		t.Skip("skipping test in short mode.")
 	}
 
-	f, err := Read("test.ods")
+	f, err := ParseContent([]byte(contentXML))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -155,14 +158,13 @@ func TestRead(t *testing.T) {
 		t.Fatal("Wrong number of sheets")
 	}
 
-	if len(f.Sheets[0].Rows) != 1000 {
+	if len(f.Sheets[0].Rows) != 100 {
 		t.Fatal("Wrong number of rows")
 	}
 
-	if len(f.Sheets[0].Rows[0].Cells) != 21 {
+	if len(f.Sheets[0].Rows[0]) != 21 {
 		t.Fatal("Wrong number of cells")
 	}
-
 }
 
 func BenchmarkRead(b *testing.B) {

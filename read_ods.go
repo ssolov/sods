@@ -32,12 +32,6 @@ const (
 	cellEnd    = "</table:table-cell>"
 	cellEndLen = len(cellEnd)
 
-	cellTypePara    = "office:value-type=\""
-	cellTypeParaLen = len(cellTypePara)
-
-	cellValuePara    = "office:value=\""
-	cellValueParaLen = len(cellValuePara)
-
 	textStart    = "<text:"
 	textStartLen = len(textStart)
 
@@ -49,24 +43,13 @@ const (
 
 	cellRepeat    = "table:number-columns-repeated=\""
 	cellRepeatLen = len(cellRepeat)
-
-	cellFormula    = "table:formula=\""
-	cellFormulaLen = len(cellFormula)
 )
 
 // Cell is a cell of the ods table
-type Cell struct {
-	Type    string // office:value-type="string"
-	Value   string // office:value="2"
-	Formula string // table:formula="of:=&quot;2019-03-31&quot;"
-	Text    string // <text:p>2019-03-31</text:p>
-
-}
+type Cell string
 
 // Row is a row with cells of the ods table
-type Row struct {
-	Cells []Cell
-}
+type Row []Cell
 
 // Sheet is the ods sheet. Wich contains the rows.
 type Sheet struct {
@@ -157,15 +140,14 @@ func parseRows(rawTable []byte) []Row {
 				continue
 			}
 
-			row := Row{}
 			var err error
 			// get cells and ignore all empty cells after last non empty cell
 			if rawRow, err = cutElementContent(rawRow, []byte(cellStart), []byte(cellEnd)); err != nil {
 				continue
 			}
 
-			row.Cells = parseCells(rawRow)
-			if len(row.Cells) > 0 {
+			row := parseCells(rawRow)
+			if len(row) > 0 {
 				rows = append(rows, row)
 			}
 		}
@@ -174,52 +156,35 @@ func parseRows(rawTable []byte) []Row {
 	return rows
 }
 
-func parseCells(rawRow []byte) []Cell {
+func parseCells(rawRow []byte) Row {
 	rawCells := bytes.Split(rawRow, []byte(cellStart))
-	cells := make([]Cell, 0, len(rawCells))
+	row := make(Row, 0, len(rawCells))
 
 	for _, rawCell := range rawCells {
 		if len(rawCell) < 1 {
 			continue
 		}
 
-		cell := parseCell(rawCell)
-		cells = append(cells, cell)
+		cell := Cell(parseCell(rawCell))
+		row = append(row, cell)
 
 		// search and copy repeted cells
 		rpCells, err := repeatCell(rawCell, cell)
 		if err == nil && len(rpCells) > 0 {
-			cells = append(cells, rpCells...)
+			row = append(row, rpCells...)
 		}
 	}
 
-	return cells
+	return row
 }
 
-func parseCell(cell []byte) Cell {
-	var c = Cell{}
-
-	bg := bytes.Index(cell, []byte(cellTypePara))
+func parseCell(cell []byte) string {
+	bg := bytes.Index(cell, []byte(textStart))
 	if bg != -1 {
-		c.Type = parseAttrValue(cell, bg+cellTypeParaLen)
+		return html.EscapeString(addNSpaces(parseElementContent(cell, bg+textStartLen)))
 	}
 
-	bg = bytes.Index(cell, []byte(cellValuePara))
-	if bg != -1 {
-		c.Value = parseAttrValue(cell, bg+cellValueParaLen)
-	}
-
-	bg = bytes.Index(cell, []byte(cellFormula))
-	if bg != -1 {
-		c.Formula = html.EscapeString(parseAttrValue(cell, bg+cellFormulaLen))
-	}
-
-	bg = bytes.Index(cell, []byte(textStart))
-	if bg != -1 {
-		c.Text = html.EscapeString(addNSpaces(parseElementContent(cell, bg+textStartLen)))
-	}
-
-	return c
+	return ""
 }
 
 func addNSpaces(txt string) string {
@@ -244,23 +209,23 @@ func addNSpaces(txt string) string {
 	return txt
 }
 
-func repeatCell(cont []byte, c Cell) ([]Cell, error) {
-	var cells []Cell
+func repeatCell(cont []byte, c Cell) (Row, error) {
+	var row Row
 	bg := bytes.Index(cont, []byte(cellRepeat))
 	if bg != -1 {
 		rpCount, err := strconv.Atoi(parseAttrValue(cont, bg+cellRepeatLen))
 		if err != nil {
-			return cells, err
+			return row, err
 		}
 
-		cells = make([]Cell, 0, rpCount-1)
+		row = make(Row, 0, rpCount-1)
 		for i := 1; i < rpCount; i++ {
 			// copy the cell append n time
-			cells = append(cells, c)
+			row = append(row, c)
 		}
 	}
 
-	return cells, nil
+	return row, nil
 }
 
 // Read function opens and reads the content of ods file
